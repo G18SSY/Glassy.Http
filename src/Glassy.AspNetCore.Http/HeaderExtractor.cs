@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
-namespace Atkins.Http.AspNetCore
+namespace Glassy.Http.AspNetCore
 {
     internal class HeaderExtractor : IRequestTokenExtractor
     {

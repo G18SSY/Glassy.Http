@@ -2,7 +2,7 @@
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 
-namespace Atkins.Http.AspNetCore
+namespace Glassy.Http.AspNetCore
 {
     internal class RequestParser : IRequestParser
     {
@@ -33,15 +33,21 @@ namespace Atkins.Http.AspNetCore
         public IParseResult Parse(HttpRequest request, RequestParserSettings settings)
         {
             // Process all the registered parameters
-            IEnumerable<RegistrationProcessResult> processResults = registrations.Select(r=>ProcessRegistration(request,settings,r)).ToList();
+            IEnumerable<RegistrationProcessResult> processResults = registrations.Select(r => ProcessRegistration(request, settings, r)).ToList();
 
             if (processResults.Any(r => !r.Success))
-            {
+                return new ParseResult(string.Join("\r\n", processResults.SelectMany(r => r.Errors)));
 
+            foreach (RegistrationProcessResult result in processResults.Where(r => r.Registration.OnParsedCallback != null))
+            {
+                // ReSharper disable once PossibleNullReferenceException
+                result.Registration.OnParsedCallback(result.Value);
             }
+
+            return new ParseResult(processResults.ToDictionary(r => r.Registration.Name, r => r.Value));
         }
 
-        private RegistrationProcessResult ProcessRegistration(HttpRequest request, RequestParserSettings settings, RequestRegistration registration)
+        private static RegistrationProcessResult ProcessRegistration(HttpRequest request, RequestParserSettings settings, RequestRegistration registration)
         {
             bool parseFailed = false;
 
@@ -61,7 +67,7 @@ namespace Atkins.Http.AspNetCore
                     if (settings.SkipFailedTokenParses)
                         continue;
 
-                    return new RegistrationProcessResult
+                    return new RegistrationProcessResult(registration)
                     {
                         Success = false,
                         Errors = new List<ValidationError>
@@ -75,32 +81,32 @@ namespace Atkins.Http.AspNetCore
                 IEnumerable<ValidationError> errors = registration.Validator?.Invoke(parsed);
 
                 // Valid
+                // ReSharper disable once PossibleMultipleEnumeration
                 if (errors == null || !errors.Any())
                 {
-                    return new RegistrationProcessResult
+                    return new RegistrationProcessResult(registration)
                     {
                         Success = true,
-                        UsedDefault = false,
                         Value = parsed
                     };
                 }
 
                 // Invalid
-                RegistrationProcessResult invalidResult = new RegistrationProcessResult
+                RegistrationProcessResult invalidResult = new RegistrationProcessResult(registration)
                 {
                     Success = false
                 };
 
                 invalidResult.Errors.Add(new ValidationError($"Parameter ({registration.Name}) failed validation..."));
+                // ReSharper disable once PossibleMultipleEnumeration
                 foreach (ValidationError error in errors)
                 {
                     invalidResult.Errors.Add(error);
                 }
 
-                return new RegistrationProcessResult
+                return new RegistrationProcessResult(registration)
                 {
                     Success = true,
-                    UsedDefault = false,
                     Value = parsed
                 };
             }
@@ -108,7 +114,7 @@ namespace Atkins.Http.AspNetCore
             // Value(s) extracted but not parsed
             if (parseFailed)
             {
-                return new RegistrationProcessResult
+                return new RegistrationProcessResult(registration)
                 {
                     Success = false,
                     Errors = new List<ValidationError>
@@ -121,7 +127,7 @@ namespace Atkins.Http.AspNetCore
             // Value missing and required
             if (registration.Required)
             {
-                return new RegistrationProcessResult
+                return new RegistrationProcessResult(registration)
                 {
                     Success = false,
                     Errors = new List<ValidationError>
@@ -132,23 +138,27 @@ namespace Atkins.Http.AspNetCore
             }
 
             // Value missing and optional
-            return new RegistrationProcessResult
+            return new RegistrationProcessResult(registration)
             {
                 Success = true,
-                UsedDefault = true,
                 Value = registration.DefaultValue
             };
         }
 
         private class RegistrationProcessResult
         {
+            public RegistrationProcessResult(RequestRegistration registration)
+            {
+                Registration = registration;
+            }
+
             public object Value { get; set; }
 
             public IList<ValidationError> Errors { get; set; } = new List<ValidationError>();
 
-            public bool UsedDefault { get; set; }
-
             public bool Success { get; set; }
+
+            public RequestRegistration Registration { get; }
         }
     }
 }

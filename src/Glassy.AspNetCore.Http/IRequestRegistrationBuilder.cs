@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 
-namespace Atkins.Http.AspNetCore
+namespace Glassy.Http.AspNetCore
 {
     /// <summary>
     ///     Tries to convert the specified string representation of a logical value to its <typeparamref name="T" />

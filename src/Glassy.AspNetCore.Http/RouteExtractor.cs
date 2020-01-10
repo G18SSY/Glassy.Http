@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace Atkins.Http.AspNetCore
+namespace Glassy.Http.AspNetCore
 {
     internal class RouteExtractor : IRequestTokenExtractor
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Atkins.Http.AspNetCore
+namespace Glassy.Http.AspNetCore
 {
     internal class RequestRegistrationBuilder : IRequestRegistrationBuilder
     {
@@ -80,7 +80,6 @@ namespace Atkins.Http.AspNetCore
         /// <summary>
         ///     Gets or sets the parse method used to convert a string value into the parameter type.
         /// </summary>
-        /// <typeparam name="TParameter">   Type of the parameter. </typeparam>
         /// <value>
         ///     A function delegate that yields a bool indicating if the conversion was successful and return an (out) TParameter
         ///     which is the result of the conversion. This will never be null.

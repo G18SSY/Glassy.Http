@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 
-namespace Atkins.Http.AspNetCore
+namespace Glassy.Http.AspNetCore
 {
     /// <summary>
     ///     A request parser builder used to add registrations and create a new <see cref="IRequestParser" />.

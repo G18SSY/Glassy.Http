@@ -1,6 +1,6 @@
 ﻿using JetBrains.Annotations;
 
-namespace Atkins.Http.AspNetCore
+namespace Glassy.Http.AspNetCore
 {
     /// <summary>
     ///     Settings for the <see cref="IRequestParser" />.

@@ -1,6 +1,6 @@
 ﻿using JetBrains.Annotations;
 
-namespace Atkins.Http.AspNetCore
+namespace Glassy.Http.AspNetCore
 {
     /// <summary>
     ///     Interface for the results of a parsing operation.
