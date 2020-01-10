@@ -1,0 +1,33 @@
+name: .NET Core
+
+on:
+  push:
+    branches: 
+      - develop
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - uses: nuget/setup-nuget@v1
+      with:
+        nuget-api-key: ${{ secrets.NUGET_API_KEY }}
+        nuget-version: 'latest'
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.2.108
+    
+    - name: Build with dotnet
+      run: dotnet build --configuration Release 
+    
+    - name: Pack with dotnet
+      run: dotnet pack --configuration Release -o nupkg --no-build --version-suffix ci-$(date +'%Y%m%dT%H%M%S')
+    
+    - name: Push package
+      run: nuget push nupkg\*.nupkg -Source "nuget.org"
+      
