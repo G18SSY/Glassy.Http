@@ -10,6 +10,7 @@
     <VersionPrefix>0.0.1</VersionPrefix>
     <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
+    <LangVersion>8.0</LangVersion>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
