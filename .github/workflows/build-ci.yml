@@ -1,4 +1,4 @@
-name: Package - Pre-release
+name: Package_develop
 
 on:
   push:

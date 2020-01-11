@@ -2,7 +2,7 @@
 Provides utility functionality for HTTP interaction in .NET
 
 ![Stable](https://img.shields.io/nuget/v/Glassy.Http.AspNetCore)
-![PreReleaseBuild](https://img.shields.io/github/workflow/status/G18SSY/Glassy.Http/Package - Pre-release?label=pre-release%20build)
+![PreReleaseBuild](https://img.shields.io/github/workflow/status/G18SSY/Glassy.Http/Package_develop?label=pre-release%20build)
 
 ## Getting Started
 
@@ -34,7 +34,11 @@ TBC
 
 ## Deployment
 
-TBC
+Run the following command in the [Package Manager Console](http://docs.nuget.org/docs/start-here/using-the-package-manager-console) or go to the [NuGet site](https://www.nuget.org/packages/Glassy.Http.AspNetCore).
+
+```
+PM> Install-Package Glassy.Http.AspNetCore
+```
 
 ## Features
 
