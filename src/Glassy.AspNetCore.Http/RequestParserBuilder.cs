@@ -10,7 +10,7 @@ namespace Glassy.Http.AspNetCore
     /// </summary>
     public class RequestParserBuilder
     {
-        private readonly Dictionary<string, RequestRegistrationBuilder> registrationBuilders = new Dictionary<string, RequestRegistrationBuilder>();
+        private readonly Dictionary<string, RequestParameterBuilder> registrationBuilders = new Dictionary<string, RequestParameterBuilder>();
 
         /// <summary>
         ///     Registers the parameter described by name.
@@ -19,11 +19,11 @@ namespace Glassy.Http.AspNetCore
         /// <typeparam name="TParameter">   Type of the parameter. </typeparam>
         /// <param name="name"> The name. This cannot be null. </param>
         [PublicAPI]
-        public IRequestRegistrationBuilder<TParameter> RegisterParameter<TParameter>([NotNull] string name)
+        public IRequestParameterBuilder<TParameter> RegisterParameter<TParameter>([NotNull] string name)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Value cannot be null or whitespace.", nameof(name));
 
-            RequestRegistrationBuilder<TParameter> builder = new RequestRegistrationBuilder<TParameter>(name);
+            RequestParameterBuilder<TParameter> builder = new RequestParameterBuilder<TParameter>(name);
             registrationBuilders.Add(name, builder);
 
             return builder;
@@ -36,16 +36,21 @@ namespace Glassy.Http.AspNetCore
         ///     An IRequestParser.
         /// </returns>
         [PublicAPI]
-        public IRequestParser Build() => new RequestParser(registrationBuilders.Values.Select(BuildRegistration));
+        public IRequestParser Build() => new RequestParser(registrationBuilders.Values.Select(BuildParameter));
 
-        private static RequestRegistration BuildRegistration(RequestRegistrationBuilder registrationBuilder) =>
-                new RequestRegistration(registrationBuilder.Name,
-                                        registrationBuilder.Required,
-                                        registrationBuilder.TokenExtractors,
-                                        registrationBuilder.DefaultValue,
-                                        registrationBuilder.TryParser,
-                                        registrationBuilder.Validator,
-                                        registrationBuilder.OnParsedCallback,
-                                        registrationBuilder.ParameterType);
+        private static RequestParameter BuildParameter(RequestParameterBuilder parameterBuilder) =>
+                new RequestParameter(parameterBuilder.Name,
+                                     parameterBuilder.Required,
+                                     parameterBuilder.TokenExtractorBuilders.Select(BuildExtractor),
+                                     parameterBuilder.DefaultValue,
+                                     parameterBuilder.TryParser,
+                                     parameterBuilder.PostValidators,
+                                     parameterBuilder.OnParseCompletedCallbacks);
+
+        private static TokenExtractor BuildExtractor(TokenExtractorBuilder extractorBuilder) =>
+                new TokenExtractor(extractorBuilder.ExtractsFrom,
+                                   extractorBuilder.Key,
+                                   extractorBuilder.PreValidators,
+                                   extractorBuilder.ExtractCallback);
     }
 }

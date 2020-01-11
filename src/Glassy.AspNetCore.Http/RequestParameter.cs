@@ -1,24 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using JetBrains.Annotations;
 
 namespace Glassy.Http.AspNetCore
 {
-    internal class RequestRegistration
+    [DebuggerDisplay("{" + nameof(Name) + "}")]
+    internal class RequestParameter
     {
-        public RequestRegistration([NotNull] string name, bool required, [NotNull] IReadOnlyList<IRequestTokenExtractor> tokenExtractors, [NotNull] object defaultValue, [NotNull] TryParseDelegate<object> tryParser, [CanBeNull] Func<object, IEnumerable<ValidationError>> validator, [CanBeNull] Action<object> onParsedCallback, Type parameterType)
+        public RequestParameter([NotNull] string name, bool required, [NotNull] [ItemNotNull] IEnumerable<TokenExtractor> tokenExtractors, [CanBeNull] object defaultValue, [NotNull] TryParseDelegate<object> tryParser, [NotNull] [ItemNotNull] IEnumerable<Func<object, IEnumerable<ValidationError>>> postValidators, [NotNull] [ItemNotNull] IEnumerable<Action<object>> onParseCompletedCallbacks)
         {
             Name = name;
             Required = required;
             TokenExtractors = tokenExtractors;
             DefaultValue = defaultValue;
             TryParser = tryParser;
-            Validator = validator;
-            OnParsedCallback = onParsedCallback;
-            ParameterType = parameterType;
+            PostValidators = postValidators;
+            OnParseCompletedCallbacks = onParseCompletedCallbacks;
         }
-
-        public Type ParameterType { get; }
 
         /// <summary>
         ///     Gets the name of the parameter.
@@ -30,7 +29,7 @@ namespace Glassy.Http.AspNetCore
         public string Name { get; }
 
         /// <summary>
-        ///     Gets or sets a value indicating whether the parameter is required.
+        ///     Gets a value indicating whether the parameter is required.
         /// </summary>
         /// <value>
         ///     True if required, false if not.
@@ -50,20 +49,21 @@ namespace Glassy.Http.AspNetCore
         ///     The token extractor. This will never be null.
         /// </value>
         [NotNull]
-        public IReadOnlyList<IRequestTokenExtractor> TokenExtractors { get; }
+        [ItemNotNull]
+        public IEnumerable<TokenExtractor> TokenExtractors { get; }
 
         /// <summary>
         ///     Gets or sets the default value to give the parameter if a value cannot be found on the
         ///     <see cref="Microsoft.AspNetCore.Http.HttpRequest" />.
         /// </summary>
         /// <value>
-        ///     The default value. This will never be null.
+        ///     The default value.
         /// </value>
-        [NotNull]
+        [CanBeNull]
         public object DefaultValue { get; }
 
         /// <summary>
-        ///     Gets or sets the parse method used to convert a string value into the parameter type.
+        ///     Gets the parse method used to convert a string value into the parameter type.
         /// </summary>
         /// <value>
         ///     A function delegate that yields a bool indicating if the conversion was successful and return an (out) object
@@ -73,22 +73,26 @@ namespace Glassy.Http.AspNetCore
         public TryParseDelegate<object> TryParser { get; }
 
         /// <summary>
-        ///     Gets or sets the validator that is used to validate a parameter once it has been parsed. The validator should yield
+        ///     Gets the validators that is used to validate a parameter once all parameters have been parsed. The validator should
+        ///     yield
         ///     <see langword="null"> or an empty <see cref="IEnumerable{ValidationError}" /> if there are no errors.</see>
         /// </summary>
         /// <value>
-        ///     A function delegate that yields an all errors with the parameter. This may be null.
+        ///     A function delegate that yields an all errors with the parameter.
         /// </value>
-        [CanBeNull]
-        public Func<object, IEnumerable<ValidationError>> Validator { get; }
+        [NotNull]
+        [ItemNotNull]
+        public IEnumerable<Func<object, IEnumerable<ValidationError>>> PostValidators { get; }
 
         /// <summary>
-        ///     Gets or sets a callback that occurs once a <see cref="IRequestParser" /> finished parsing successfully.
+        ///     Gets a callback that will be invoked when all parameters have been parsed and validated. This can be used to set a
+        ///     variable to the value extracted by the <see cref="IRequestParser" />.
         /// </summary>
         /// <value>
         ///     The on parsed callback. This may be null.
         /// </value>
-        [CanBeNull]
-        public Action<object> OnParsedCallback { get; }
+        [NotNull]
+        [ItemNotNull]
+        public IEnumerable<Action<object>> OnParseCompletedCallbacks { get; }
     }
 }

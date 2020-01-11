@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 
@@ -6,11 +7,11 @@ namespace Glassy.Http.AspNetCore
 {
     internal class RequestParser : IRequestParser
     {
-        private readonly IEnumerable<RequestRegistration> registrations;
+        private readonly IEnumerable<RequestParameter> parameters;
 
-        public RequestParser(IEnumerable<RequestRegistration> registrations)
+        public RequestParser(IEnumerable<RequestParameter> parameters)
         {
-            this.registrations = registrations;
+            this.parameters = parameters;
         }
 
         /// <summary>
@@ -33,25 +34,54 @@ namespace Glassy.Http.AspNetCore
         public IParseResult Parse(HttpRequest request, RequestParserSettings settings)
         {
             // Process all the registered parameters
-            IEnumerable<RegistrationProcessResult> processResults = registrations.Select(r => ProcessRegistration(request, settings, r)).ToList();
+            IEnumerable<RegistrationProcessResult> results = parameters.Select(r => ProcessRegistration(request, settings, r)).ToList();
 
-            if (processResults.Any(r => !r.Success))
-                return new ParseResult(string.Join("\r\n", processResults.SelectMany(r => r.Errors)));
+            if (results.Any(r => !r.Success))
+                return new ParseResult(string.Join("\r\n", results.SelectMany(r => r.Errors)));
 
-            foreach (RegistrationProcessResult result in processResults.Where(r => r.Registration.OnParsedCallback != null))
+            // Post validate
+            IEnumerable<ValidationError> errors = PostValidate(results);
+
+            if (errors.Any())
+                return new ParseResult(string.Join("\r\n", results.SelectMany(r => r.Errors)));
+
+            foreach (RegistrationProcessResult result in results)
             {
-                // ReSharper disable once PossibleNullReferenceException
-                result.Registration.OnParsedCallback(result.Value);
+                foreach (Action<object> parseCompletedCallback in result.Parameter.OnParseCompletedCallbacks)
+                {
+                    parseCompletedCallback(result.Value);
+                }
             }
 
-            return new ParseResult(processResults.ToDictionary(r => r.Registration.Name, r => r.Value));
+            return new ParseResult(results.ToDictionary(r => r.Parameter.Name, r => r.Value));
         }
 
-        private static RegistrationProcessResult ProcessRegistration(HttpRequest request, RequestParserSettings settings, RequestRegistration registration)
+        private static IEnumerable<ValidationError> PostValidate(IEnumerable<RegistrationProcessResult> results)
+        {
+            foreach (RegistrationProcessResult result in results)
+            {
+                IEnumerable<ValidationError> errors = result.Parameter.PostValidators
+                                                            .Select(pv => pv(result.Value))
+                                                            .Where(e => e != null)
+                                                            .SelectMany(e => e)
+                                                            .ToList();
+
+                if (!errors.Any()) continue;
+
+                yield return new ValidationError($"Parameter ({result.Parameter.Name}) failed validation...");
+
+                foreach (ValidationError error in errors)
+                {
+                    yield return error;
+                }
+            }
+        }
+
+        private static RegistrationProcessResult ProcessRegistration(HttpRequest request, RequestParserSettings settings, RequestParameter parameter)
         {
             bool parseFailed = false;
 
-            foreach (IRequestTokenExtractor extractor in registration.TokenExtractors)
+            foreach (TokenExtractor extractor in parameter.TokenExtractors)
             {
                 // Extract value
                 string extracted = extractor.Extract(request);
@@ -60,31 +90,34 @@ namespace Glassy.Http.AspNetCore
                     continue;
 
                 // Parse
-                if (!registration.TryParser(extracted, out object parsed))
+                if (!parameter.TryParser(extracted, out object parsed))
                 {
                     parseFailed = true;
 
                     if (settings.SkipFailedTokenParses)
                         continue;
 
-                    return new RegistrationProcessResult(registration)
+                    return new RegistrationProcessResult(parameter)
                     {
                         Success = false,
                         Errors = new List<ValidationError>
                         {
-                            new ValidationError($"Value provided ({extracted}) for parameter ({registration.Name}) was invalid and could not be parsed")
+                            new ValidationError($"Value provided ({extracted}) for parameter ({parameter.Name}) was invalid and could not be parsed")
                         }
                     };
                 }
 
-                // Validate
-                IEnumerable<ValidationError> errors = registration.Validator?.Invoke(parsed);
+                // Pre validate
+                IList<ValidationError> errors = extractor.PreValidators
+                                                         .Select(pv => pv(parsed))
+                                                         .Where(e => e != null)
+                                                         .SelectMany(e => e)
+                                                         .ToList();
 
                 // Valid
-                // ReSharper disable once PossibleMultipleEnumeration
-                if (errors == null || !errors.Any())
+                if (errors.Count == 0)
                 {
-                    return new RegistrationProcessResult(registration)
+                    return new RegistrationProcessResult(parameter)
                     {
                         Success = true,
                         Value = parsed
@@ -92,19 +125,21 @@ namespace Glassy.Http.AspNetCore
                 }
 
                 // Invalid
-                RegistrationProcessResult invalidResult = new RegistrationProcessResult(registration)
+                if (settings.SkipFailedPreValidations)
+                    continue;
+
+                RegistrationProcessResult invalidResult = new RegistrationProcessResult(parameter)
                 {
                     Success = false
                 };
 
-                invalidResult.Errors.Add(new ValidationError($"Parameter ({registration.Name}) failed validation..."));
-                // ReSharper disable once PossibleMultipleEnumeration
+                invalidResult.Errors.Add(new ValidationError($"Parameter ({parameter.Name}) failed pre-validation..."));
                 foreach (ValidationError error in errors)
                 {
                     invalidResult.Errors.Add(error);
                 }
 
-                return new RegistrationProcessResult(registration)
+                return new RegistrationProcessResult(parameter)
                 {
                     Success = true,
                     Value = parsed
@@ -114,42 +149,42 @@ namespace Glassy.Http.AspNetCore
             // Value(s) extracted but not parsed
             if (parseFailed)
             {
-                return new RegistrationProcessResult(registration)
+                return new RegistrationProcessResult(parameter)
                 {
                     Success = false,
                     Errors = new List<ValidationError>
                     {
-                        new ValidationError($"Value(s) provided for parameter ({registration.Name}) were invalid and could not be parsed")
+                        new ValidationError($"Value(s) provided for parameter ({parameter.Name}) were invalid and could not be parsed")
                     }
                 };
             }
 
             // Value missing and required
-            if (registration.Required)
+            if (parameter.Required)
             {
-                return new RegistrationProcessResult(registration)
+                return new RegistrationProcessResult(parameter)
                 {
                     Success = false,
                     Errors = new List<ValidationError>
                     {
-                        new ValidationError($"Required parameter ({registration.Name}) missing, it can be specified using:\r\n{string.Join("\r\n", registration.TokenExtractors.Select(e => $"\t HTTP request {e.ExtractsFrom} with a key of {e.Key}"))}")
+                        new ValidationError($"Required parameter ({parameter.Name}) missing, it can be specified using:\r\n{string.Join("\r\n", parameter.TokenExtractors.Select(e => $"\t HTTP request {e.ExtractsFrom} with a key of {e.Key}"))}")
                     }
                 };
             }
 
             // Value missing and optional
-            return new RegistrationProcessResult(registration)
+            return new RegistrationProcessResult(parameter)
             {
                 Success = true,
-                Value = registration.DefaultValue
+                Value = parameter.DefaultValue
             };
         }
 
         private class RegistrationProcessResult
         {
-            public RegistrationProcessResult(RequestRegistration registration)
+            public RegistrationProcessResult(RequestParameter parameter)
             {
-                Registration = registration;
+                Parameter = parameter;
             }
 
             public object Value { get; set; }
@@ -158,7 +193,7 @@ namespace Glassy.Http.AspNetCore
 
             public bool Success { get; set; }
 
-            public RequestRegistration Registration { get; }
+            public RequestParameter Parameter { get; }
         }
     }
 }
