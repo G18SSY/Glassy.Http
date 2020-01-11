@@ -34,7 +34,11 @@ TBC
 
 ## Deployment
 
-TBC
+Run the following command in the [Package Manager Console](http://docs.nuget.org/docs/start-here/using-the-package-manager-console) or go to the [NuGet site](https://www.nuget.org/packages/Glassy.Http.AspNetCore).
+
+```
+PM> Install-Package Glassy.Http.AspNetCore
+```
 
 ## Features
 
