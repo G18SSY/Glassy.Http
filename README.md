@@ -2,7 +2,7 @@
 Provides utility functionality for HTTP interaction in .NET
 
 ![Stable](https://img.shields.io/nuget/v/Glassy.Http.AspNetCore)
-![PreReleaseBuild](https://img.shields.io/github/workflow/status/G18SSY/Glassy.Http/Package - Pre-release?label=pre-release%20build)
+![PreReleaseBuild](https://img.shields.io/github/workflow/status/G18SSY/Glassy.Http/Package_develop?label=pre-release%20build)
 
 ## Getting Started
 
