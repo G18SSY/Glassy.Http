@@ -1,4 +1,4 @@
-name: .NET Core
+name: Package - Pre-release
 
 on:
   push:

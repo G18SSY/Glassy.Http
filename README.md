@@ -1,6 +1,9 @@
 # Glassy.Http
 Provides utility functionality for HTTP interaction in .NET
 
+![Stable](https://img.shields.io/nuget/v/Glassy.Http.AspNetCore)
+![PreReleaseBuild](https://img.shields.io/github/workflow/status/G18SSY/Glassy.Http/Package - Pre-release?label=pre-release%20build)
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
