@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using JetBrains.Annotations;
 
 namespace Glassy.Http.AspNetCore
@@ -29,6 +30,7 @@ namespace Glassy.Http.AspNetCore
         /// </value>
         [NotNull]
         [PublicAPI]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         string Name { get; }
 
         /// <summary>
@@ -38,6 +40,7 @@ namespace Glassy.Http.AspNetCore
         ///     True if required, false if not.
         /// </value>
         [PublicAPI]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         bool Required { get; set; }
 
         /// <summary>
@@ -54,6 +57,7 @@ namespace Glassy.Http.AspNetCore
         /// </value>
         [NotNull]
         [PublicAPI]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         List<IRequestTokenExtractor> TokenExtractors { get; }
     }
 
@@ -61,7 +65,7 @@ namespace Glassy.Http.AspNetCore
     ///     Interface for building request parameter registrations.
     /// </summary>
     /// <typeparam name="TParameter">   Type of the parameter. </typeparam>
-    public interface IRequestRegistrationBuilder<TParameter> : IRequestRegistrationBuilder
+    public interface IRequestRegistrationBuilder<TParameter> : IRequestRegistrationBuilder, IHideObjectMembers
     {
         /// <summary>
         ///     Gets or sets the default value to give the parameter if a value cannot be found on the
@@ -72,6 +76,7 @@ namespace Glassy.Http.AspNetCore
         /// </value>
         [CanBeNull]
         [PublicAPI]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         TParameter DefaultValue { get; set; }
 
         /// <summary>
@@ -83,6 +88,7 @@ namespace Glassy.Http.AspNetCore
         /// </value>
         [NotNull]
         [PublicAPI]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         TryParseDelegate<TParameter> TryParser { get; set; }
 
         /// <summary>
@@ -94,6 +100,7 @@ namespace Glassy.Http.AspNetCore
         /// </value>
         [CanBeNull]
         [PublicAPI]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         Func<TParameter, IEnumerable<ValidationError>> Validator { get; set; }
 
         /// <summary>
@@ -104,6 +111,7 @@ namespace Glassy.Http.AspNetCore
         /// </value>
         [CanBeNull]
         [PublicAPI]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         Action<TParameter> OnParsedCallback { get; set; }
     }
 }
