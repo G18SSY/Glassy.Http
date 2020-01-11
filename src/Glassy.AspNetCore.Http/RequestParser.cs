@@ -37,13 +37,13 @@ namespace Glassy.Http.AspNetCore
             IEnumerable<RegistrationProcessResult> results = parameters.Select(r => ProcessRegistration(request, settings, r)).ToList();
 
             if (results.Any(r => !r.Success))
-                return new ParseResult(string.Join("\r\n", results.SelectMany(r => r.Errors)));
+                return new ParseResult(string.Join("\r\n", results.SelectMany(r => r.Errors).Select(e => e.Message)));
 
             // Post validate
             IEnumerable<ValidationError> errors = PostValidate(results);
 
             if (errors.Any())
-                return new ParseResult(string.Join("\r\n", results.SelectMany(r => r.Errors)));
+                return new ParseResult(string.Join("\r\n", results.SelectMany(r => r.Errors).Select(e=>e.Message)));
 
             foreach (RegistrationProcessResult result in results)
             {
