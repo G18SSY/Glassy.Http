@@ -49,7 +49,7 @@ namespace Glassy.Http.AspNetCore
     {
         public RequestParameterBuilder(string name) : base(name)
         {
-            DefaultValue = default;
+            DefaultValue = default(TParameter);
             TryParser = ReflectionBasedTryParse;
         }
 
@@ -232,7 +232,12 @@ namespace Glassy.Http.AspNetCore
         /// <param name="onParsed"> The on parsed callback. </param>
         IRequestParameterBuilder<TParameter> IRequestParameterBuilder<TParameter>.AddOnParseCompletedCallback(Action<TParameter> onParsed)
         {
-            OnParseCompletedCallbacks.Add(o => onParsed((TParameter)o));
+            OnParseCompletedCallbacks.Add(o =>
+            {
+                TParameter parameter = (TParameter)o;
+
+                onParsed(parameter);
+            });
 
             return this;
         }
