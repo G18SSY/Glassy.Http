@@ -143,7 +143,6 @@ namespace Glassy.Http.AspNetCore
         ITokenExtractorBuilder<TParameter> IRequestParameterBuilder<TParameter>.FromRoute(string key, string value)
         {
             if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Value cannot be null or whitespace.", nameof(key));
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("Value cannot be null or whitespace.", nameof(value));
 
             const string extractsFrom = "route";
             TokenExtractorBuilder<TParameter> builder = new TokenExtractorBuilder<TParameter>(this,
